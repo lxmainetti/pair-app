@@ -1,7 +1,7 @@
 """
 PAIR Inference Service
 ======================
-Loads Qwen3-8B-4bit once at startup and exposes a single endpoint:
+Calls PAIR's inference module and exposes a single endpoint:
 
   POST /predict   {"items": ["item1", "item2", ...]}
   → {"pairs": [{"item1": "...", "item2": "...", "r": 0.42}, ...]}
@@ -15,13 +15,16 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv()  # loads OPENAI_API_KEY (and others) from .env if present
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 # ── PAIR repo paths ────────────────────────────────────────────────────────────
 PAIR_REPO   = Path(os.environ.get("PAIR_REPO",   "/opt/PAIR"))
 MODELS_ROOT = Path(os.environ.get("MODELS_ROOT", str(PAIR_REPO / "models")))
-MODEL_ID    = "Qwen-Qwen3-Embedding-8B-4bit"
+MODEL_ID    = os.environ.get("MODEL_ID", "text-embedding-3-large")
 MODEL_DIR   = MODELS_ROOT / MODEL_ID
 
 for _p in (
