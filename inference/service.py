@@ -62,7 +62,7 @@ def predict(req: PredictRequest):
 
     try:
         import importlib.util, sys as _sys
-        _spec = importlib.util.spec_from_file_location("pair_inference", PAIR_REPO / "code" / "modelling" / "inference.py")
+        _spec = importlib.util.spec_from_file_location("pair_inference", PAIR_REPO / "code" / "inference.py")
         _mod = importlib.util.module_from_spec(_spec)
         _spec.loader.exec_module(_mod)
         predict_correlations = _mod.predict_correlations
