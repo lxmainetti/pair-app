@@ -16,7 +16,7 @@ import httpx
 # ── Config ─────────────────────────────────────────────────────────────────────
 MOCK          = os.environ.get("PAIR_MOCK", "0") not in ("0", "", "false", "False")
 INFERENCE_URL = os.environ.get("INFERENCE_URL", "http://localhost:8081/predict")
-TIMEOUT       = float(os.environ.get("INFERENCE_TIMEOUT", "120"))   # seconds
+TIMEOUT       = float(os.environ.get("INFERENCE_TIMEOUT", "1800"))   # seconds
 
 
 # ── Mock helpers ───────────────────────────────────────────────────────────────
