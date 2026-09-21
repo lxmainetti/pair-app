@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAIR</title>
+<style>
+:root {
+  --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a;
+  --border:#2a2d3a; --accent:#6366f1; --accent2:#818cf8;
+  --text:#e2e8f0; --muted:#64748b;
+  --red:#ef4444; --green:#22c55e; --yellow:#f59e0b;
+  --hero-good:#22c55e; --hero-ok:#f59e0b; --hero-bad:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* ── Header ── */
+header{background:var(--surface);border-bottom:1px solid var(--border);
+  padding:.9rem 2rem;display:flex;align-items:center;gap:1rem}
+header h1{font-size:1.35rem;font-weight:700;letter-spacing:-.5px}
+header .sub{color:var(--muted);font-size:.82rem;flex:1}
+.badge{font-size:.68rem;padding:2px 9px;border-radius:999px;font-weight:700;letter-spacing:.04em}
+.badge-mock{background:#92400e;color:#fde68a}
+.badge-live{background:#1e3a5f;color:#93c5fd}
+
+/* ── Nav tabs ── */
+nav{background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;padding:0 2rem}
+nav button{background:none;border:none;color:var(--muted);
+  padding:.75rem 1.2rem;font-size:.9rem;cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .15s}
+nav button.active{color:var(--accent2);border-bottom-color:var(--accent)}
+nav button:hover:not(.active){color:var(--text)}
+
+/* ── Layout ── */
+.page{display:none;max-width:1200px;margin:0 auto;padding:2rem;
+  grid-template-columns:320px 1fr;gap:2rem}
+.page.active{display:grid}
+@media(max-width:700px){.page{grid-template-columns:1fr}}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.4rem}
+.card h3{font-size:.85rem;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem}
+
+/* ── Controls ── */
+label{display:block;font-size:.78rem;color:var(--muted);
+  margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.05em}
+textarea{width:100%;background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);padding:.6rem .8rem;
+  font-size:.88rem;font-family:monospace;line-height:1.5;
+  resize:vertical;outline:none;transition:border .2s;margin-bottom:1rem}
+textarea:focus{border-color:var(--accent)}
+.scale-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+.run-btn{width:100%;padding:.7rem;background:var(--accent);color:#fff;
+  border:none;border-radius:8px;font-size:.95rem;font-weight:600;
+  cursor:pointer;transition:background .2s}
+.run-btn:hover:not(:disabled){background:var(--accent2)}
+.run-btn:disabled{opacity:.45;cursor:not-allowed}
+.status{margin-top:.8rem;font-size:.82rem;color:var(--muted);min-height:1.2em}
+.status.err{color:var(--red)}.status.ok{color:var(--green)}
+
+/* ── Hero stat ── */
+.hero{text-align:center;padding:1.5rem 0 1rem}
+.hero-val{font-size:3.6rem;font-weight:800;line-height:1}
+.hero-label{font-size:.82rem;color:var(--muted);margin-top:.4rem;text-transform:uppercase;letter-spacing:.06em}
+.hero-interp{font-size:1rem;font-weight:600;margin-top:.5rem}
+
+/* ── Section separator ── */
+.section-title{font-size:.8rem;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;margin:1.4rem 0 .6rem}
+
+/* ── Heatmap ── */
+.heatmap-wrap{overflow-x:auto;margin-top:.5rem}
+table.hm{border-collapse:collapse;font-size:.72rem}
+table.hm th,table.hm td{padding:3px 5px;text-align:center;white-space:nowrap}
+table.hm th{color:var(--muted);font-weight:500;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+table.hm .rl{text-align:right;padding-right:7px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis}
+table.hm td.cell{width:36px;height:36px;border-radius:4px;font-weight:600}
+
+/* ── Pairs table ── */
+table.pairs{width:100%;border-collapse:collapse;font-size:.83rem}
+table.pairs th{text-align:left;color:var(--muted);font-size:.73rem;
+  text-transform:uppercase;letter-spacing:.05em;
+  padding:.45rem .7rem;border-bottom:1px solid var(--border)}
+table.pairs td{padding:.45rem .7rem;border-bottom:1px solid var(--border)}
+.rbar-wrap{display:flex;align-items:center;gap:.5rem}
+.rbar{height:5px;border-radius:3px;min-width:3px}
+
+/* ── Placeholder ── */
+.placeholder{color:var(--muted);font-size:.88rem;padding:3rem 0;text-align:center}
+
+/* ── Spinner ── */
+.spin{display:inline-block;width:15px;height:15px;
+  border:2px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:.4rem}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>PAIR</h1>
+  <span class="sub">Predicting Associations of Inter-item Relationships</span>
+  <span id="mode-badge" class="badge"></span>
+</header>
+
+<nav>
+  <button class="active" onclick="showPage('inter-item',this)">Inter-item</button>
+  <button onclick="showPage('inter-scale',this)">Inter-scale</button>
+  <button onclick="showPage('consistency',this)">Internal consistency</button>
+</nav>
+
+<!-- ═══════════════════════════════ INTER-ITEM ════════════════════════════════ -->
+<div id="page-inter-item" class="page active">
+  <div>
+    <div class="card">
+      <h3>Items</h3>
+      <label>One item per line (min 2)</label>
+      <textarea id="ii-items" rows="12" placeholder="I see myself as someone who is talkative.
+I see myself as someone who is reserved.
+I see myself as someone who is full of energy.
+I generate a lot of enthusiasm.
+I tend to be quiet.
+I have an assertive personality.
+I am sometimes shy, inhibited.
+I am outgoing, sociable."></textarea>
+      <button class="run-btn" onclick="runInterItem()">Predict correlations</button>
+      <div id="ii-status" class="status"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Results</h3>
+    <div id="ii-results"><div class="placeholder">Run a prediction to see results.</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ INTER-SCALE ════════════════════════════════ -->
+<div id="page-inter-scale" class="page">
+  <div>
+    <div class="card">
+      <h3>Scales</h3>
+      <div class="scale-row">
+        <div>
+          <label>Scale A</label>
+          <textarea id="is-a" rows="8" placeholder="Item A1
+Item A2
+Item A3"></textarea>
+        </div>
+        <div>
+          <label>Scale B</label>
+          <textarea id="is-b" rows="8" placeholder="Item B1
+Item B2
+Item B3"></textarea>
+        </div>
+      </div>
+      <button class="run-btn" onclick="runInterScale()">Compute inter-scale r</button>
+      <div id="is-status" class="status"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Results</h3>
+    <div id="is-results"><div class="placeholder">Enter two scales and run.</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════ INTERNAL CONSISTENCY ═══════════════════════════ -->
+<div id="page-consistency" class="page">
+  <div>
+    <div class="card">
+      <h3>Scale items</h3>
+      <label>One item per line (min 2)</label>
+      <textarea id="ca-items" rows="12" placeholder="I see myself as someone who is talkative.
+I generate a lot of enthusiasm.
+I have an assertive personality.
+I am outgoing, sociable."></textarea>
+      <button class="run-btn" onclick="runConsistency()">Compute Cronbach's α</button>
+      <div id="ca-status" class="status"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Results</h3>
+    <div id="ca-results"><div class="placeholder">Run to compute internal consistency.</div></div>
+  </div>
+</div>
+
+<script>
+/* ── Utilities ─────────────────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const lines = id => $(id).value.split('\n').map(s=>s.trim()).filter(Boolean);
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  $('page-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function setStatus(id, msg, cls='') {
+  const el=$(id); el.className='status '+cls; el.innerHTML=msg;
+}
+
+function rColor(r) {
+  const v=Math.max(-1,Math.min(1,r));
+  if(v>=0){
+    const t=v;
+    return `rgb(${Math.round(239*(1-t))},${Math.round(68*(1-t))},${Math.round(68+187*t)})`;
+  } else {
+    const t=-v;
+    return `rgb(${Math.round(99*(1-t))},${Math.round(102*(1-t))},${Math.round(241-41*t)})`;
+  }
+}
+function textColor(r){return Math.abs(r)>0.4?'#fff':'var(--text)'}
+function trunc(s,n=20){return s.length>n?s.slice(0,n)+'…':s}
+
+/* ── Heatmap renderer ──────────────────────────────────────────────────────── */
+function heatmap(items, matrix, title='') {
+  let h=title?`<div class="section-title">${title}</div>`:'';
+  h+='<div class="heatmap-wrap"><table class="hm"><thead><tr><th></th>';
+  items.forEach(it=>{h+=`<th title="${it}">${trunc(it,11)}</th>`});
+  h+='</tr></thead><tbody>';
+  matrix.forEach((row,i)=>{
+    h+=`<tr><td class="rl" title="${items[i]}">${trunc(items[i],17)}</td>`;
+    row.forEach((v,j)=>{
+      const bg=rColor(v),fg=textColor(v);
+      h+=`<td class="cell" style="background:${bg};color:${fg}" title="${items[i]} × ${items[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
+    });
+    h+='</tr>';
+  });
+  return h+'</tbody></table></div>';
+}
+
+function crossHeatmap(items_a, items_b, matrix, title='') {
+  let h=title?`<div class="section-title">${title}</div>`:'';
+  h+='<div class="heatmap-wrap"><table class="hm"><thead><tr><th>A \\ B</th>';
+  items_b.forEach(it=>{h+=`<th title="${it}">${trunc(it,11)}</th>`});
+  h+='</tr></thead><tbody>';
+  matrix.forEach((row,i)=>{
+    h+=`<tr><td class="rl" title="${items_a[i]}">${trunc(items_a[i],17)}</td>`;
+    row.forEach((v,j)=>{
+      const bg=rColor(v),fg=textColor(v);
+      h+=`<td class="cell" style="background:${bg};color:${fg}" title="${items_a[i]} × ${items_b[j]}: ${v.toFixed(3)}">${v.toFixed(2)}</td>`;
+    });
+    h+='</tr>';
+  });
+  return h+'</tbody></table></div>';
+}
+
+/* ── Pairs table ───────────────────────────────────────────────────────────── */
+function pairsTable(pairs, title='') {
+  const sorted=[...pairs].sort((a,b)=>Math.abs(b.r??b.predicted_r)-Math.abs(a.r??a.predicted_r));
+  let h=title?`<div class="section-title">${title}</div>`:'';
+  h+='<table class="pairs"><thead><tr><th>Item 1</th><th>Item 2</th><th>r</th></tr></thead><tbody>';
+  sorted.forEach(p=>{
+    const r=p.r??p.predicted_r;
+    const w=Math.round(Math.abs(r)*80);
+    const col=r>=0?'#ef4444':'#6366f1';
+    h+=`<tr>
+      <td title="${p.item1}">${trunc(p.item1,40)}</td>
+      <td title="${p.item2}">${trunc(p.item2,40)}</td>
+      <td><div class="rbar-wrap">
+        <div class="rbar" style="width:${w}px;background:${col}"></div>
+        <span style="font-weight:600;color:${col}">${r.toFixed(3)}</span>
+      </div></td>
+    </tr>`;
+  });
+  return h+'</tbody></table>';
+}
+
+/* ── Hero stat ─────────────────────────────────────────────────────────────── */
+function heroStat(val, label, interp='', interpColor='var(--text)') {
+  return `<div class="hero">
+    <div class="hero-val">${val}</div>
+    <div class="hero-label">${label}</div>
+    ${interp?`<div class="hero-interp" style="color:${interpColor}">${interp}</div>`:''}
+  </div>`;
+}
+
+function alphaColor(a) {
+  if(a>=0.80) return 'var(--green)';
+  if(a>=0.60) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+/* ── API helpers ───────────────────────────────────────────────────────────── */
+async function post(endpoint, body) {
+  const res = await fetch(endpoint, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.detail || res.statusText);
+  return data;
+}
+
+/* ── Inter-item ────────────────────────────────────────────────────────────── */
+async function runInterItem() {
+  const btn=document.querySelector('#page-inter-item .run-btn');
+  const items=lines('ii-items');
+  if(items.length<2){setStatus('ii-status','Need at least 2 items.','err');return}
+  btn.disabled=true;
+  setStatus('ii-status','<span class="spin"></span> Running…');
+  try {
+    const d = await post('/api/inter-item', {items});
+    $('ii-results').innerHTML = heatmap(d.items, d.matrix) + pairsTable(d.pairs, 'All pairs');
+    setStatus('ii-status',`✓ ${d.pairs.length} pairs`,'ok');
+  } catch(e) { setStatus('ii-status','Error: '+e.message,'err'); }
+  finally { btn.disabled=false; }
+}
+
+/* ── Inter-scale ───────────────────────────────────────────────────────────── */
+async function runInterScale() {
+  const btn=document.querySelector('#page-inter-scale .run-btn');
+  const items_a=lines('is-a'), items_b=lines('is-b');
+  if(!items_a.length||!items_b.length){setStatus('is-status','Each scale needs at least 1 item.','err');return}
+  btn.disabled=true;
+  setStatus('is-status','<span class="spin"></span> Running…');
+  try {
+    const d = await post('/api/inter-scale', {items_a, items_b});
+    const rColor_ = d.r_ab>=0?'var(--red)':'var(--accent2)';
+    let html = heroStat(d.r_ab.toFixed(3), 'Inter-scale r(A,B)', '', rColor_);
+    html += crossHeatmap(d.items_a, d.items_b, d.cross_matrix, 'A × B cross-correlations');
+    html += heatmap(d.items_a, d.matrix_a, 'Within scale A');
+    html += heatmap(d.items_b, d.matrix_b, 'Within scale B');
+    html += pairsTable(d.cross_pairs, 'Cross pairs');
+    $('is-results').innerHTML = html;
+    setStatus('is-status',`✓ r = ${d.r_ab.toFixed(3)}`,'ok');
+  } catch(e) { setStatus('is-status','Error: '+e.message,'err'); }
+  finally { btn.disabled=false; }
+}
+
+/* ── Consistency ───────────────────────────────────────────────────────────── */
+async function runConsistency() {
+  const btn=document.querySelector('#page-consistency .run-btn');
+  const items=lines('ca-items');
+  if(items.length<2){setStatus('ca-status','Need at least 2 items.','err');return}
+  btn.disabled=true;
+  setStatus('ca-status','<span class="spin"></span> Running…');
+  try {
+    const d = await post('/api/consistency', {items});
+    const col=alphaColor(d.alpha);
+    let html = heroStat(d.alpha.toFixed(3), "Cronbach's α", d.interpretation, col);
+    html += heatmap(d.items, d.matrix);
+    html += pairsTable(d.pairs, 'All pairs');
+    $('ca-results').innerHTML = html;
+    setStatus('ca-status',`✓ α = ${d.alpha.toFixed(3)} — ${d.interpretation}`,'ok');
+  } catch(e) { setStatus('ca-status','Error: '+e.message,'err'); }
+  finally { btn.disabled=false; }
+}
+
+/* ── Init ──────────────────────────────────────────────────────────────────── */
+(async () => {
+  try {
+    const s = await fetch('/api/status').then(r=>r.json());
+    const badge = $('mode-badge');
+    if(s.mock) { badge.textContent='MOCK'; badge.className='badge badge-mock'; }
+    else        { badge.textContent='LIVE'; badge.className='badge badge-live'; }
+  } catch(_){}
+})();
+</script>
+</body>
+</html>
