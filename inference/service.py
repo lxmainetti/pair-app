@@ -61,7 +61,12 @@ def predict(req: PredictRequest):
         raise HTTPException(500, f"Model checkpoint not found: {MODEL_DIR}")
 
     try:
-        from inference import predict_correlations, to_matrix
+        import importlib.util, sys as _sys
+        _spec = importlib.util.spec_from_file_location("pair_inference", PAIR_REPO / "code" / "modelling" / "inference.py")
+        _mod = importlib.util.module_from_spec(_spec)
+        _spec.loader.exec_module(_mod)
+        predict_correlations = _mod.predict_correlations
+        to_matrix = _mod.to_matrix
     except ImportError as e:
         raise HTTPException(500, f"Cannot import PAIR inference module: {e}")
 
