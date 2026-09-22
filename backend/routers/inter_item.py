@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from ..core.pair_bridge import predict_pairs, MOCK
 from ..core.stats import build_matrix
+from ..core.run_log import log_run
 
 router = APIRouter()
 
@@ -17,6 +18,7 @@ def inter_item(req: InterItemRequest):
         pairs = predict_pairs(items)
     except RuntimeError as e:
         raise HTTPException(503, str(e))
+    log_run("inter-item", {None: items})
     matrix = build_matrix(items, pairs)
     pair_list = [
         {"item1": a, "item2": b, "r": r}

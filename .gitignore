@@ -6,3 +6,6 @@ __pycache__/
 venv/
 *.egg-info/
 .pytest_cache/
+
+# SQLite databases (embeddings + runs) — server data, never commit
+data/
