@@ -9,7 +9,6 @@ Mock mode : PAIR_MOCK=1  →  deterministic per-pair random correlations,
 import itertools
 import os
 import random
-from typing import Optional
 
 import httpx
 

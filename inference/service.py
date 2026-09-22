@@ -12,17 +12,15 @@ Run (server, PAIR git-cloned):
 Run (local, PAIR pip-installed):
   uvicorn inference.service:app --port 8081
 
+Model: Qwen/Qwen3-Embedding-8B with the siamese checkpoint from PAIR's models/ folder.
+
 Env vars:
-  PAIR_REPO       Path to PAIR git checkout (server). Not needed if PAIR is pip-installed.
-  MODELS_ROOT     Override model checkpoint root (default: PAIR_REPO/models or pair package models/).
-  MODEL_ID        Embedding model id, e.g. "Qwen/Qwen3-Embedding-8B" or "text-embedding-3-large".
-  OPENAI_API_KEY  For OpenAI text-embedding-3-* models.
-  DEEPINFRA_API_KEY  For DeepInfra-hosted models (Qwen/Qwen3-Embedding-8B).
-                     When set, embeddings are fetched from DeepInfra with the correct Qwen3
-                     instruction prefix and passed directly to PAIR -- PAIR does not re-embed.
+  PAIR_REPO          Path to PAIR git checkout (server). Not needed if PAIR is pip-installed.
+  DEEPINFRA_API_KEY  When set, embeddings are fetched from DeepInfra with the Qwen3
+                     instruction prefix and passed directly to PAIR (PAIR does not re-embed).
+                     When unset, PAIR embeds the items locally.
 """
 
-import json
 import os
 import sys
 from pathlib import Path
@@ -55,12 +53,12 @@ def _get_pair():
             "Either `pip install -e /path/to/PAIR` or set PAIR_REPO=/path/to/PAIR."
         )
     PAIR_REPO = Path(PAIR_REPO)
-    for _p in (
+    for _dir in (
         PAIR_REPO / "code",
         PAIR_REPO / "code" / "modelling",
         PAIR_REPO / "code" / "data_prep" / "helper_functions",
     ):
-        sys.path.insert(0, str(_p))
+        sys.path.insert(0, str(_dir))
     import importlib.util
     _spec = importlib.util.spec_from_file_location("pair_inference", PAIR_REPO / "code" / "inference.py")
     _mod = importlib.util.module_from_spec(_spec)
@@ -70,11 +68,7 @@ def _get_pair():
 
 # ── Config ────────────────────────────────────────────────────────────────────
 MODEL_ID          = "Qwen/Qwen3-Embedding-8B"
-MODELS_ROOT       = None   # None → PAIR uses its own default (models/ in the repo)
 DEEPINFRA_API_KEY = os.environ.get("DEEPINFRA_API_KEY")
-
-# model_safe: checkpoint directory name PAIR derives from MODEL_ID
-_MODEL_SAFE = MODEL_ID.replace(":", "-").replace("/", "-")
 
 # Qwen3 instruction prefix — matches PAIR's training setup exactly
 _QWEN3_TASK   = (
@@ -133,8 +127,6 @@ def predict(req: PredictRequest):
         raise HTTPException(500, str(e))
 
     kwargs = dict(model=MODEL_ID)
-    if MODELS_ROOT:
-        kwargs["models_root"] = MODELS_ROOT
 
     if DEEPINFRA_API_KEY:
         # Embed ourselves (with instruction prefix), pass vectors straight to PAIR
@@ -158,12 +150,4 @@ def predict(req: PredictRequest):
 
 @app.get("/health")
 def health():
-    info = {"status": "ok", "model": MODEL_ID, "backend": "deepinfra" if DEEPINFRA_API_KEY else "openai"}
-    if MODELS_ROOT:
-        ckpt = Path(MODELS_ROOT) / _MODEL_SAFE / "dnn_siamese_cor.pt"
-        info["checkpoint"] = str(ckpt)
-        info["checkpoint_found"] = ckpt.exists()
-        meta_path = Path(MODELS_ROOT) / _MODEL_SAFE / "embedding_meta.json"
-        if meta_path.exists():
-            info["meta"] = json.loads(meta_path.read_text())
-    return info
+    return {"status": "ok", "model": MODEL_ID, "embeddings": "deepinfra" if DEEPINFRA_API_KEY else "local"}
