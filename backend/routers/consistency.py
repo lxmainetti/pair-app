@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from ..core.pair_bridge import predict_pairs, MOCK
-from ..core.stats import build_matrix, cronbach_alpha, alpha_interpretation
+from ..core.stats import build_matrix, cronbach_alpha, alpha_if_deleted, alpha_interpretation
 
 router = APIRouter()
 
@@ -26,6 +26,7 @@ def consistency(req: ConsistencyRequest):
         "items": items,
         "alpha": alpha,
         "interpretation": alpha_interpretation(alpha),
+        "alpha_if_deleted": alpha_if_deleted(items, pairs),
         "matrix": build_matrix(items, pairs),
         "pairs": pair_list,
         "mock": MOCK,

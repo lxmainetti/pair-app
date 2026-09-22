@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inter-item · PAIR</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%234b2394'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/modernist.css">
+<link rel="stylesheet" href="css/pair.css">
+<script type="module" src="js/inter-item.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="nav site-nav is-app">
+    <a href="./" class="nav-brand">PAIR</a>
+    <span class="spacer"></span>
+    <span class="tag tag-outline mock-badge" hidden>MOCK</span>
+    <a href="about.html">About</a>
+  </header>
+  <nav class="tabs" aria-label="Analyses">
+    <a href="inter-item.html" aria-current="page">Inter-item</a>
+    <a href="inter-scale.html">Inter-scale</a>
+    <a href="consistency.html">Internal consistency</a>
+  </nav>
+
+  <div class="workspace">
+    <aside class="inputs">
+      <div class="list-head"><h6>Items</h6><span class="count" id="count"></span></div>
+      <div id="items"></div>
+      <button class="btn btn-primary btn-block run-btn" id="run" type="button"><span>Predict correlations</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+      <div class="status" id="status" aria-live="polite"></div>
+    </aside>
+
+    <main class="results">
+      <div class="results-head">
+        <h6>Results</h6>
+        <span class="spacer"></span>
+        <div class="seg-switch" id="view-switch" role="group" aria-label="View" hidden></div>
+        <button class="btn btn-secondary" id="export" type="button" disabled><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>Export CSV</button>
+      </div>
+      <div class="results-body" id="results-body"></div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

@@ -14,7 +14,6 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from .routers import inter_item, inter_scale, consistency
@@ -32,6 +31,6 @@ app.include_router(consistency.router)
 def status():
     return {"mock": MOCK}
 
-@app.get("/", response_class=HTMLResponse)
-def index():
-    return HTMLResponse((FRONTEND / "index.html").read_text(encoding="utf-8"))
+# Static frontend (index.html, about.html, the analysis pages, css/, js/).
+# Mounted last so the /api routes above take precedence.
+app.mount("/", StaticFiles(directory=FRONTEND, html=True), name="frontend")

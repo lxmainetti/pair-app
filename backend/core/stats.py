@@ -24,11 +24,28 @@ def cronbach_alpha(items: list[str], pairs: dict) -> float:
     if n < 2:
         return float("nan")
     sum_r = sum(
-        get_r(pairs, items[i], items[j])
+        abs(get_r(pairs, items[i], items[j]))
         for i in range(n)
         for j in range(i + 1, n)
     )
     return round((n / (n - 1)) * (1 - n / (n + 2 * sum_r)), 4)
+
+
+def alpha_if_deleted(items: list[str], pairs: dict) -> list[dict]:
+    """
+    Cronbach's α recomputed with each item left out, in item order.
+    delta = α without the item − α of the full scale (positive → α rises).
+    alpha/delta are None when fewer than 2 items would remain.
+    """
+    full = cronbach_alpha(items, pairs)
+    out = []
+    for k, item in enumerate(items):
+        a = cronbach_alpha(items[:k] + items[k + 1:], pairs)
+        if math.isnan(a):
+            out.append({"item": item, "alpha": None, "delta": None})
+        else:
+            out.append({"item": item, "alpha": a, "delta": round(a - full, 4)})
+    return out
 
 
 def inter_scale_r(items_a: list[str], items_b: list[str], pairs: dict) -> float:
