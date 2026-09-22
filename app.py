@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from core.pair_bridge import list_models, MOCK
+from core.pair_bridge import MOCK
 from routers import inter_item, inter_scale, consistency
 
 app = FastAPI(title="PAIR", description="Pairwise item-correlation predictions")
@@ -21,11 +21,6 @@ app = FastAPI(title="PAIR", description="Pairwise item-correlation predictions")
 app.include_router(inter_item.router)
 app.include_router(inter_scale.router)
 app.include_router(consistency.router)
-
-
-@app.get("/api/models")
-def get_models():
-    return {"models": list_models(), "mock": MOCK}
 
 
 STATIC = Path(__file__).parent / "static"
