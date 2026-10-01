@@ -32,6 +32,16 @@ def status():
     return {"mock": MOCK}
 
 
+class RevalidatedStaticFiles(StaticFiles):
+    """Static files that browsers must revalidate on every load (a cheap 304 when unchanged).
+    Without Cache-Control, browsers guess a lifetime and keep serving stale CSS/JS after a deploy."""
+
+    def file_response(self, *args, **kwargs):
+        resp = super().file_response(*args, **kwargs)
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
+
 # Static frontend (index.html, about.html, the analysis pages, css/, js/).
 # Mounted last so the /api routes above take precedence.
-app.mount("/", StaticFiles(directory=FRONTEND, html=True), name="frontend")
+app.mount("/", RevalidatedStaticFiles(directory=FRONTEND, html=True), name="frontend")
