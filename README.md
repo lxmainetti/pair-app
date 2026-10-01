@@ -53,3 +53,7 @@ Keep the inference service bound to localhost. It has no authentication, and wit
 ## Data
 
 Every real run (not mock mode) stores its items in `data/runs.sqlite`, and every item's embedding is stored in `data/embeddings.sqlite`. The analysis pages tell users this. `data/` is git-ignored. To export both databases to Parquet, run `python tools/export_db.py --out DIR`.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
