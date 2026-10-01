@@ -9,3 +9,6 @@ venv/
 
 # SQLite databases (embeddings + runs) — server data, never commit
 data/
+
+# Local tooling
+.claude/

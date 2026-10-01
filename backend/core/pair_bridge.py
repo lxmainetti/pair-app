@@ -7,21 +7,26 @@ Mock mode : PAIR_MOCK=1  →  deterministic per-pair random correlations,
 """
 
 import itertools
+import logging
 import os
 import random
+import zlib
 
 import httpx
+
+log = logging.getLogger("uvicorn.error")   # shows up in the service log
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 MOCK          = os.environ.get("PAIR_MOCK", "0") not in ("0", "", "false", "False")
 INFERENCE_URL = os.environ.get("INFERENCE_URL", "http://localhost:8081/predict")
 TIMEOUT       = float(os.environ.get("INFERENCE_TIMEOUT", "1800"))   # seconds
+MAX_ITEMS     = 50   # the inference service's per-request limit
 
 
 # ── Mock helpers ───────────────────────────────────────────────────────────────
 def _mock_r(a: str, b: str) -> float:
-    key = (min(a, b), max(a, b))
-    rng = random.Random(hash(key) & 0xFFFF_FFFF)
+    key = f"{min(a, b)}\x00{max(a, b)}"
+    rng = random.Random(zlib.crc32(key.encode()))   # not hash(): str hashes change every process
     return round(rng.uniform(-0.85, 0.95), 4)
 
 
@@ -32,6 +37,8 @@ def predict_pairs(items: list[str]) -> dict[tuple[str, str], float]:
     Symmetric: get_r() in stats.py handles the reverse lookup.
     """
     items = [s.strip() for s in items if s.strip()]
+    if len(set(items)) > MAX_ITEMS:
+        raise ValueError(f"At most {MAX_ITEMS} different items per run.")
 
     if MOCK:
         return {
@@ -47,13 +54,17 @@ def predict_pairs(items: list[str]) -> dict[tuple[str, str], float]:
             timeout=TIMEOUT,
         )
         resp.raise_for_status()
+    # These messages reach the browser, so details (URL, upstream errors) only go to the log.
     except httpx.ConnectError:
-        raise RuntimeError(
-            f"Cannot reach inference service at {INFERENCE_URL}. "
-            "Is it running? (uvicorn inference.service:app --port 8081)"
-        )
+        log.error("Cannot reach inference service at %s. Is it running? "
+                  "(uvicorn inference.service:app --port 8081)", INFERENCE_URL)
+        raise RuntimeError("Inference service unavailable.")
+    except httpx.TimeoutException:
+        log.error("Inference service at %s timed out after %ss", INFERENCE_URL, TIMEOUT)
+        raise RuntimeError("Inference service timed out.")
     except httpx.HTTPStatusError as e:
-        raise RuntimeError(f"Inference service error {e.response.status_code}: {e.response.text}")
+        log.error("Inference service error %s: %s", e.response.status_code, e.response.text)
+        raise RuntimeError(f"Inference service error {e.response.status_code}.")
 
     data = resp.json()
     pairs: dict[tuple[str, str], float] = {}

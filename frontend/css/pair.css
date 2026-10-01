@@ -138,8 +138,9 @@ button { font-family: inherit; }
   padding-top: 16px; border-top: 1px solid var(--color-divider);
 }
 .reference p { font-size: 14px; text-wrap: pretty; }
+.leads { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px 32px; }
 .person-lead { display: flex; flex-direction: column; gap: 6px; }
-.person-lead strong { font: 800 32px/1.1 var(--font-heading); letter-spacing: -0.02em; }
+.person-lead strong { font: 800 24px/1.1 var(--font-heading); letter-spacing: -0.02em; }
 .person-lead span { font-size: 15px; color: var(--color-neutral-800); }
 .person-lead a { font-size: 15px; align-self: flex-start; }
 .collab > .eyebrow { padding-bottom: 8px; border-bottom: 2px solid var(--color-divider); }
@@ -151,6 +152,13 @@ button { font-family: inherit; }
 .person b { font-size: 15px; }
 .person span { font-size: 13px; color: var(--color-neutral-700); }
 .github-link { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; align-self: flex-start; }
+.repos { display: flex; flex-direction: column; border-top: 2px solid var(--color-divider); }
+.repo {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 16px;
+  min-height: 44px; border-bottom: 1px solid var(--color-divider);
+}
+.repo > span { font-size: 13px; color: var(--color-neutral-700); }
+.repo .github-link { align-self: center; min-width: 0; overflow-wrap: anywhere; }
 .about-cta { padding-top: 32px; border-top: 2px solid var(--color-divider); }
 .about-cta .btn-cta { padding: 16px 18px; font-size: 16px; }
 
@@ -352,4 +360,13 @@ button { font-family: inherit; }
   .about-section { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .ranked-head, .ranked-row { grid-template-columns: minmax(0, 1fr) 120px 48px; gap: 12px; }
   .stat-value { font-size: 34px; }
+}
+
+/* Home on phones: the scatter becomes a full-bleed band above the title instead of sitting behind it. */
+@media (max-width: 719px) {
+  .home-scatter {
+    position: relative; inset: auto; flex: none; height: 240px; margin: -48px -16px 24px;
+    -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 45%);
+    mask-image: linear-gradient(to top, transparent 0%, #000 45%);
+  }
 }

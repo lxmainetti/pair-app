@@ -26,7 +26,7 @@ const ICONS = {
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
   'rotate-ccw': '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
 };
-export function icon(name, size = 14, stroke = 2) {
+function icon(name, size = 14, stroke = 2) {
   const t = document.createElement('template');
   t.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
   return t.content.firstChild;
@@ -41,35 +41,35 @@ function signed(r, digits, stripZero) {
   return (neg ? MINUS : '') + s;
 }
 /** −.42 */
-export const fmt2 = r => signed(r, 2, true);
+const fmt2 = r => signed(r, 2, true);
 /** −.421 */
 export const fmt3 = r => signed(r, 3, true);
 /** −0.421 */
-export const fmtFull = r => signed(r, 3, false);
+const fmtFull = r => signed(r, 3, false);
 /** +.012 / −.008 */
 export const fmtDelta = d => (d < 0 && Number(Math.abs(d).toFixed(3)) !== 0 ? MINUS : '+') + Math.abs(d).toFixed(3).replace(/^0/, '');
 
-export const pad2 = n => String(n).padStart(2, '0');
+const pad2 = n => String(n).padStart(2, '0');
 
-export function heatBg(r) {
+function heatBg(r) {
   const p = Math.round(Math.min(1, Math.abs(r)) * 100);
   return `color-mix(in srgb, var(${r >= 0 ? '--heat-pos' : '--heat-neg'}) ${p}%, var(--color-bg))`;
 }
 
 /* ── Storage (per-viewer convenience only) ─────────────────────────────── */
-export function load(key) {
+function load(key) {
   try { return JSON.parse(sessionStorage.getItem(key)); } catch { return null; }
 }
-export function save(key, value) {
+function save(key, value) {
   try { sessionStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable */ }
 }
 
 /* ── API ───────────────────────────────────────────────────────────────── */
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 
-export async function postJSON(url, body) {
+async function postJSON(url, body) {
   let res;
   try {
     res = await fetch(url, {
@@ -90,12 +90,12 @@ export async function postJSON(url, body) {
   return data;
 }
 
-export function showMockBadge(on) {
+function showMockBadge(on) {
   const badge = $('.mock-badge');
   if (badge) badge.hidden = !on;
 }
 
-export async function initMockBadge() {
+async function initMockBadge() {
   try {
     const s = await fetch('/api/status').then(r => r.json());
     showMockBadge(!!s.mock);

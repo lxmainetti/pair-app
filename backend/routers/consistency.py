@@ -16,6 +16,8 @@ def consistency(req: ConsistencyRequest):
         raise HTTPException(400, "Need at least 2 items.")
     try:
         pairs = predict_pairs(items)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     except RuntimeError as e:
         raise HTTPException(503, str(e))
     log_run("consistency", {None: items})

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from ..core.pair_bridge import predict_pairs, MOCK
-from ..core.stats import build_matrix, build_cross_matrix, inter_scale_r
+from ..core.stats import build_matrix, build_cross_matrix, get_r, inter_scale_r
 from ..core.run_log import log_run
 
 router = APIRouter()
@@ -17,14 +17,18 @@ def inter_scale(req: InterScaleRequest):
     if len(items_a) < 1 or len(items_b) < 1:
         raise HTTPException(400, "Each scale needs at least 1 item.")
     all_items = list(dict.fromkeys(items_a + items_b))  # deduped, order-preserving
+    if len(all_items) < 2:
+        raise HTTPException(400, "Need at least 2 different items.")
     try:
         pairs = predict_pairs(all_items)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     except RuntimeError as e:
         raise HTTPException(503, str(e))
     log_run("inter-scale", {"A": items_a, "B": items_b})
     r_ab = inter_scale_r(items_a, items_b, pairs)
     cross_pairs = [
-        {"item1": a, "item2": b, "r": pairs.get((min(a,b), max(a,b)), 0.0)}
+        {"item1": a, "item2": b, "r": get_r(pairs, a, b)}   # same lookup as cross_matrix
         for a in items_a for b in items_b
     ]
     return {

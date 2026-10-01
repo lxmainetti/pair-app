@@ -1,0 +1,12 @@
+# Web app (app.py, backend/)
+fastapi
+uvicorn
+httpx
+
+# Inference service (inference/service.py); PAIR itself is installed separately, see README
+numpy
+openai
+python-dotenv
+
+# Database export (tools/export_db.py)
+polars
