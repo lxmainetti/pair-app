@@ -17,8 +17,9 @@ below). Items already in it are not embedded again; only new items go to DeepInf
 
 Env vars:
   PAIR_REPO          Path to PAIR git checkout (server). Not needed if PAIR is pip-installed.
-  DEEPINFRA_API_KEY  When set, new items are embedded via DeepInfra with the Qwen3
-                     instruction prefix. When unset, PAIR embeds them locally.
+  DEEPINFRA_API_KEY  When set, new items are embedded via DeepInfra (PAIR's
+                     backend="deepinfra"). When unset, PAIR embeds them locally.
+                     Same model and instruction as training either way.
   PAIR_DATA_DIR      Folder for the SQLite databases (default: <repo>/data).
 """
 
@@ -80,12 +81,13 @@ DEEPINFRA_API_KEY = os.environ.get("DEEPINFRA_API_KEY")
 DATA_DIR          = Path(os.environ.get("PAIR_DATA_DIR") or Path(__file__).resolve().parent.parent / "data")
 EMBEDDINGS_DB     = DATA_DIR / "embeddings.sqlite"
 
-# Qwen3 instruction prefix — matches PAIR's training setup exactly
-_QWEN3_TASK   = (
+# Instruction PAIR embeds with (PSYCHO_INSTRUCT in PAIR's embedding_functions.py).
+# Embedding itself happens inside PAIR; this string is only the embedding-store
+# key, so it must change whenever PAIR's instruction does.
+_QWEN3_TASK = (
     "Given a psychometric scale item, represent its latent psychological "
-    "constructs for predicting response correlations and factor structures."
+    "constructs for predicting inter-item response correlations."
 )
-_QWEN3_PREFIX = f"Instruct: {_QWEN3_TASK}\nQuery: "
 
 
 # ── Embedding store ───────────────────────────────────────────────────────────
@@ -174,26 +176,11 @@ class PredictResponse(BaseModel):
 
 
 # ── Embedding ──────────────────────────────────────────────────────────────────
-def _embed_via_deepinfra(items: list[str]) -> dict:
-    """Call DeepInfra with the Qwen3 instruction prefix; return {item: np.ndarray}."""
-    from openai import OpenAI
-    client = OpenAI(
-        api_key=DEEPINFRA_API_KEY,
-        base_url="https://api.deepinfra.com/v1/openai",
-    )
-    prefixed = [f"{_QWEN3_PREFIX}{item}" for item in items]
-    vectors = []
-    for i in range(0, len(prefixed), 100):
-        batch = prefixed[i : i + 100]
-        resp = client.embeddings.create(model=MODEL_ID, input=batch)
-        # sort by index to guarantee order
-        vectors.extend([d.embedding for d in sorted(resp.data, key=lambda x: x.index)])
-    return {item: np.asarray(vec, dtype=np.float32) for item, vec in zip(items, vectors)}
-
-
-def _embed_locally(pair, items: list[str]) -> dict:
-    """PAIR's own embedder (same model and instruction as training); return {item: np.ndarray}."""
-    df = pair.embed(items, model=MODEL_ID)
+def _embed(pair, items: list[str]) -> dict:
+    """PAIR's own embedder: via DeepInfra if DEEPINFRA_API_KEY is set, else locally.
+    Same model and instruction as training either way; return {item: np.ndarray}."""
+    backend = "deepinfra" if DEEPINFRA_API_KEY else None
+    df = pair.embed(items, model=MODEL_ID, backend=backend)
     mat = df.drop("item").to_numpy().astype(np.float32)
     return dict(zip(df["item"].to_list(), mat))
 
@@ -211,7 +198,7 @@ def _embeddings_for(pair, items: list[str]) -> dict:
     if missing:
         source = "deepinfra" if DEEPINFRA_API_KEY else "local"
         try:
-            new = _embed_via_deepinfra(missing) if DEEPINFRA_API_KEY else _embed_locally(pair, missing)
+            new = _embed(pair, missing)
         except Exception as e:
             label = "DeepInfra embedding" if DEEPINFRA_API_KEY else "Local embedding"
             raise HTTPException(500, f"{label} error: {e}")
