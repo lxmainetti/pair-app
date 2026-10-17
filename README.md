@@ -56,4 +56,4 @@ Every real run (not mock mode) stores its items in `data/runs.sqlite`, and every
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) (Creative Commons Attribution-NonCommercial 4.0 International): free to use, share and adapt for non-commercial purposes with attribution. See [LICENSE](LICENSE).
