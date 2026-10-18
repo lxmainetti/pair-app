@@ -179,7 +179,7 @@ class PredictResponse(BaseModel):
 def _embed(pair, items: list[str]) -> dict:
     """PAIR's own embedder: via DeepInfra if DEEPINFRA_API_KEY is set, else locally.
     Same model and instruction as training either way; return {item: np.ndarray}."""
-    backend = "deepinfra" if DEEPINFRA_API_KEY else None
+    backend = "api" if DEEPINFRA_API_KEY else None
     df = pair.embed(items, model=MODEL_ID, backend=backend)
     mat = df.drop("item").to_numpy().astype(np.float32)
     return dict(zip(df["item"].to_list(), mat))
